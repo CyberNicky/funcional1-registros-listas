@@ -159,9 +159,7 @@ head([])
 
 Erro esperado: não é possível obter o primeiro elemento de uma lista vazia.
 
-## Escopo da primeira versão
-
-A primeira versão será limitada a:
+## Escopo 
 
 - declaração de registros;
 - criação de registros imutáveis;
@@ -171,20 +169,6 @@ A primeira versão será limitada a:
 - funções recursivas para processar as listas;
 - verificação básica de tipos;
 - tratamento de erros e testes.
-
-## Fora do escopo
-
-Para manter a proposta viável, inicialmente não serão implementados:
-
-- alteração ou atualização de campos;
-- métodos associados aos registros;
-- herança ou outros recursos de orientação a objetos;
-- listas genéricas para todos os tipos;
-- operações `size` e `append`;
-- funções de ordem superior, como `map`, `filter` e `fold`;
-- inferência avançada de tipos.
-
-Essas funcionalidades poderão ser consideradas futuramente, caso seja necessário ampliar o projeto.
 
 ## Tecnologias
 
