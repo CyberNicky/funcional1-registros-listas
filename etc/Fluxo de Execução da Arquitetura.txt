@@ -1,0 +1,16 @@
+Código-Fonte (.lf1)
+      │
+      ▼
+   [ Lexer ]  ──► Transforma caracteres em Tokens (ex: RECORD, IDENT, DOT)
+      │
+      ▼
+  [ Parser ]  ──► Valida a gramática e constrói a [ ASTNode ]
+      │
+      ▼
+[TypeChecker] ──► Intercepta erros estáticos (ex: tipos heterogêneos em listas)
+      │
+      ▼
+[Interpreter] ──► Processa os [ Value ] imutáveis usando o [ Environment ]
+      │
+      ▼
+Resultado / Erro de Runtime (ex: head em lista vazia)

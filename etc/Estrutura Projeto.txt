@@ -1,0 +1,35 @@
+lf1-records-lists/
+├── pom.xml
+└── src/
+    └── main/
+        └── java/
+            └── br/
+                └── ufpe/
+                    └── cin/
+                        └── lf1/
+                            ├── Main.java
+                            ├── ast/
+                            │   ├── ASTNode.java
+                            │   ├── BuiltinOpNode.java
+                            │   ├── FieldAccessNode.java
+                            │   ├── ListLiteralNode.java
+                            │   ├── RecordDeclNode.java
+                            │   └── RecordInstNode.java
+                            ├── eval/
+                            │   ├── Environment.java
+                            │   └── Interpreter.java
+                            ├── typechecker/
+                            │   ├── TypeChecker.java
+                            │   └── TypeErrorException.java
+                            ├── types/
+                            │   ├── ListType.java
+                            │   ├── PrimitiveType.java
+                            │   ├── RecordType.java
+                            │   └── Type.java
+                            └── values/
+                                ├── BoolValue.java
+                                ├── IntValue.java
+                                ├── ListValue.java
+                                ├── RecordValue.java
+                                ├── StringValue.java
+                                └── Value.java

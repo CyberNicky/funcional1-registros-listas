@@ -1,0 +1,60 @@
+(* Programa e Declarações *)
+Programa            ::= { DeclRegistro | DeclFuncao } Expressao ;
+
+DeclRegistro        ::= "record" ID_TIPO "{" [ DeclCampos ] "}" ;
+DeclCampos          ::= DeclCampo { "," DeclCampo } ;
+DeclCampo           ::= ID_CAMPO ":" Tipo ;
+
+Tipo                ::= "Int" | "String" | "Boolean" | ID_TIPO | TipoLista ;
+TipoLista           ::= "[" Tipo "]" ;
+
+(* Declaração de Funções já existente na LF1 *)
+DeclFuncao          ::= "fun" ID_FUNCAO "(" [ Parametros ] ")" "=" Expressao ;
+Parametros          ::= ID_VAR { "," ID_VAR } ;
+
+(* Expressões *)
+Expressao           ::= ExprSe
+                      | InstanciacaoRegistro
+                      | LiteralLista
+                      | OperacaoLista
+                      | AcessoCampo
+                      | ExprAritmetica ;
+
+ExprSe              ::= "if" Expressao "then" Expressao "else" Expressao ;
+
+(* Registros e Acesso a Campos *)
+InstanciacaoRegistro::= ID_TIPO "{" [ AtribuicaoCampos ] "}" ;
+AtribuicaoCampos    ::= AtribuicaoCampo { "," AtribuicaoCampo } ;
+AtribuicaoCampo     ::= ID_CAMPO ":" Expressao ;
+
+AcessoCampo         ::= Primaria "." ID_CAMPO ;
+
+(* Listas e Operações *)
+LiteralLista        ::= "[" [ ElementosLista ] "]" ;
+ElementosLista      ::= Expressao { "," Expressao } ;
+
+OperacaoLista       ::= "head" "(" Expressao ")"
+                      | "tail" "(" Expressao ")"
+                      | "isEmpty" "(" Expressao ")" ;
+
+(* Expressões Básicas e Primárias *)
+Primaria            ::= ID_VAR
+                      | LIT_INT
+                      | LIT_STRING
+                      | LIT_BOOL
+                      | "(" Expressao ")"
+                      | ChamadaFuncao
+                      | InstanciacaoRegistro
+                      | LiteralLista ;
+
+ChamadaFuncao       ::= ID_FUNCAO "(" [ Argumentos ] ")" ;
+Argumentos          ::= Expressao { "," Expressao } ;
+
+(* Terminais / Léxico *)
+ID_TIPO             ::= [A-Z][a-zA-Z0-9_]* ;
+ID_CAMPO            ::= [a-z][a-zA-Z0-9_]* ;
+ID_FUNCAO           ::= [a-z][a-zA-Z0-9_]* ;
+ID_VAR              ::= [a-z][a-zA-Z0-9_]* ;
+LIT_INT             ::= [0-9]+ ;
+LIT_STRING          ::= '"' { [^"\\] } '"' ;
+LIT_BOOL            ::= "true" | "false" ;
