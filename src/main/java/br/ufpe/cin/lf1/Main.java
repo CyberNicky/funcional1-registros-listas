@@ -1,91 +1,70 @@
 package br.ufpe.cin.lf1;
 
-import br.ufpe.cin.lf1.ast.*;
-import br.ufpe.cin.lf1.eval.Environment;
-import br.ufpe.cin.lf1.eval.Interpreter;
-import br.ufpe.cin.lf1.typechecker.TypeChecker;
-import br.ufpe.cin.lf1.typechecker.TypeErrorException;
-import br.ufpe.cin.lf1.types.PrimitiveType;
-import br.ufpe.cin.lf1.types.Type;
-import br.ufpe.cin.lf1.values.*;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import java.util.List;
-import java.util.Map;
+import lf1.plp.expressions2.expression.Valor;
+import lf1.plp.expressions2.expression.ValorBooleano;
+import lf1.plp.expressions2.expression.ValorInteiro;
+import lf1.plp.expressions2.expression.ValorString;
+import lf1.plp.functional1.Programa;
+import lf1.plp.functional1.parser.Func1Parser;
+import lf1.plp.functional1.parser.ParseException;
+import lf1.plp.functional1.parser.TokenMgrError;
 
+/** Entrada de linha de comando para a Funcional 1 da disciplina. */
 public class Main {
     public static void main(String[] args) {
-
-        TypeChecker typeChecker = new TypeChecker();
-        Interpreter interpreter = new Interpreter();
-        Environment env = new Environment();
-
-        RecordDeclNode declPessoa = new RecordDeclNode("Pessoa", Map.of(
-                "nome", PrimitiveType.STRING,
-                "idade", PrimitiveType.INT
-        ));
-        typeChecker.registerRecordType(declPessoa);
-        IO.println("-> Tipo Pessoa declarado com sucesso.");
-
-        ASTNode p1 = new RecordInstNode("Pessoa", Map.of(
-                "nome", new RecordInstNode.StaticValue(new StringValue("Monique")),
-                "idade", new RecordInstNode.StaticValue(new IntValue(23))
-        ));
-
-        ASTNode p2 = new RecordInstNode("Pessoa", Map.of(
-                "nome", new RecordInstNode.StaticValue(new StringValue("Bruno")),
-                "idade", new RecordInstNode.StaticValue(new IntValue(25))
-        ));
-
-        ASTNode listaPessoasNode = new ListLiteralNode(List.of(p1, p2));
-
-        Type tipoLista = typeChecker.check(listaPessoasNode);
-        IO.println("-> Lista verificada estaticamente com o tipo: " + tipoLista);
-
-        ListValue listaPessoasVal = (ListValue) interpreter.eval(listaPessoasNode, env);
-        env.bind("pessoas", listaPessoasVal);
-
-        IO.println("\n--- Executando Operações sobre Listas ---");
-
-        ASTNode headOp = new BuiltinOpNode("head", listaPessoasNode);
-        RecordValue primeiro = (RecordValue) interpreter.eval(headOp, env);
-        IO.println("head(pessoas) = " + primeiro);
-
-        ASTNode acessoNome = new FieldAccessNode(headOp, "nome");
-        Value nomeVal = interpreter.eval(acessoNome, env);
-        IO.println("head(pessoas).nome = " + ((StringValue) nomeVal).value());
-
-        ASTNode tailOp = new BuiltinOpNode("tail", listaPessoasNode);
-        ListValue resto = (ListValue) interpreter.eval(tailOp, env);
-        IO.println("tail(pessoas) contem " + resto.elements().size() + " elemento(s).");
-
-        ASTNode emptyOp = new BuiltinOpNode("isEmpty", listaPessoasNode);
-        BoolValue estaVazia = (BoolValue) interpreter.eval(emptyOp, env);
-        IO.println("isEmpty(pessoas) = " + estaVazia.value());
-
-        IO.println("\n--- Validação de Erros Previstos ---");
-
-        try {
-            ASTNode pInvalido = new RecordInstNode("Pessoa", Map.of(
-                    "nome", new RecordInstNode.StaticValue(new StringValue("Monique")),
-                    "idade", new RecordInstNode.StaticValue(new BoolValue(true))
-            ));
-            typeChecker.check(pInvalido);
-        } catch (TypeErrorException e) {
-            IO.println("[OK] Capturou Erro de Tipo: " + e.getMessage());
+        if (args.length == 1 && args[0].equals("--demo-registros")) {
+            DemoRegistros.main(new String[0]);
+            return;
         }
-
-        try {
-            ASTNode acessoErrado = new FieldAccessNode(p1, "endereco");
-            typeChecker.check(acessoErrado);
-        } catch (TypeErrorException e) {
-            IO.println("[OK] Capturou Erro de Campo Inexistente: " + e.getMessage());
+        if (args.length == 1 && args[0].equals("--help")) {
+            usage();
+            return;
         }
-
-        try {
-            ListValue listaVazia = new ListValue(PrimitiveType.INT, List.of());
-            listaVazia.head();
-        } catch (RuntimeException e) {
-            IO.println("[OK] Capturou Erro de Runtime: " + e.getMessage());
+        if (args.length > 1 || (args.length == 1 && args[0].startsWith("--"))) {
+            usage();
+            System.exit(2);
+            return;
         }
+        try (Reader input = args.length == 0
+                ? new InputStreamReader(System.in, StandardCharsets.UTF_8)
+                : Files.newBufferedReader(Path.of(args[0]), StandardCharsets.UTF_8)) {
+            Programa programa = new Func1Parser(input).Input();
+            if (!programa.checaTipo()) {
+                System.err.println("Erro de tipo: programa rejeitado pela Funcional 1.");
+                System.exit(1);
+                return;
+            }
+            Valor valor = programa.executar();
+            String resultado = switch (valor) {
+                case ValorInteiro inteiro -> Integer.toString(inteiro.valor());
+                case ValorBooleano booleano -> Boolean.toString(booleano.valor());
+                case ValorString string -> string.valor();
+                default -> valor.toString();
+            };
+            System.out.println("Resultado: " + resultado);
+        } catch (ParseException | TokenMgrError e) {
+            System.err.println("Erro de sintaxe: " + e.getMessage());
+            System.exit(1);
+        } catch (IOException e) {
+            System.err.println("Erro ao ler programa: " + e.getMessage());
+            System.exit(1);
+        } catch (Exception e) {
+            String detalhe = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+            System.err.println("Erro na verificação ou execução: " + detalhe);
+            System.exit(1);
+        }
+    }
+
+    private static void usage() {
+        System.out.println("Uso: java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar [arquivo.lf1]");
+        System.out.println("Sem arquivo, lê um programa da entrada padrão até EOF.");
+        System.out.println("Opções: --help | --demo-registros");
     }
 }

@@ -1,5 +1,13 @@
 # Extensão da Linguagem Funcional 1: Registros Imutáveis e Listas de Registros
 
+## Documentação da implementação
+
+O andamento, as decisões técnicas, a sintaxe executável, os testes e as próximas
+etapas estão em [Documentação da implementação](docs/IMPLEMENTACAO.md).
+Registros, acesso a campos, listas e suas operações já estão integrados à
+linguagem. A inferência para funções que inspecionam registros e listas e o
+processamento recursivo da proposta ainda estão pendentes.
+
 ## Tema
 
 Extensão da Linguagem Funcional 1 com suporte a **registros imutáveis** e **listas de registros**.
@@ -173,6 +181,92 @@ Erro esperado: não é possível obter o primeiro elemento de uma lista vazia.
 ## Tecnologias
 
 As tecnologias e ferramentas seguirão a implementação-base da Linguagem Funcional 1 disponibilizada na disciplina.
+
+## Como executar
+
+Requisitos: **JDK 25** e **Apache Maven**. O código usa `IO.println`, disponível a partir do Java 25.
+
+No macOS com Homebrew:
+
+```sh
+brew install openjdk@25 maven
+export JAVA_HOME="$(brew --prefix openjdk@25)/libexec/openjdk.jdk/Contents/Home"
+export PATH="$JAVA_HOME/bin:$PATH"
+```
+
+Na pasta do projeto, compile, execute os testes e gere o JAR:
+
+```sh
+mvn clean verify
+```
+
+Execute um programa da Funcional 1:
+
+```sh
+java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/funcional1/variaveis.lf1
+# Resultado: 25
+
+java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/funcional1/funcoes.lf1
+# Resultado: 14
+
+java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/funcional1/fatorial.lf1
+# Resultado: 120
+```
+
+Também é possível passar um programa pela entrada padrão:
+
+```sh
+echo 'let fun somar x y = x + y in somar(2, 3)' | java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar
+```
+
+Sem argumentos, o programa lê a entrada até EOF (Ctrl+D no terminal do macOS).
+Os arquivos são lidos em UTF-8. Erros de sintaxe, tipos ou execução encerram o
+comando com código diferente de zero.
+
+### Organização da implementação
+
+- `src/main/java/lf1/plp/`: implementação-base da disciplina, com expressões,
+  declarações, tipos e ambientes de execução.
+- `src/main/javacc/Functional1.jj`: gramática JavaCC da base, estendida com registros e listas. O Maven gera o
+  parser automaticamente em `target/generated-sources/javacc`; edite o `.jj`,
+  não os arquivos gerados.
+- `src/main/java/br/ufpe/cin/lf1/Main.java`: entrada de linha de comando.
+- `src/main/java/br/ufpe/cin/lf1/`: também contém o protótipo de registros e listas.
+- `../PLP/`: cópia local de referência da disciplina; não participa da compilação
+  deste projeto. Alterações para a extensão devem ser feitas em `src/main/`.
+- `examples/funcional1/`: programas executáveis da linguagem-base.
+- `examples/registros/`: programas executáveis da extensão.
+- `src/main/java/lf1/plp/functional1/extension/`: tipos, valores e expressões da extensão integrada.
+- `src/test/java/`: testes de integração do parser, tipos e interpretador.
+
+A Funcional 1 e as construções básicas de registros e listas estão integradas.
+Os exemplos acima continuam ilustrando a proposta; consulte a
+[documentação da implementação](docs/IMPLEMENTACAO.md) para a sintaxe aceita
+nesta etapa. Os exemplos completos podem ser executados com:
+
+```sh
+java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/registros/pessoa.lf1
+# Resultado: Monique
+
+java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/registros/listas.lf1
+# Resultado: 48
+```
+
+A demonstração Java do protótipo independente continua disponível:
+
+```sh
+java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar --demo-registros
+```
+
+Na sintaxe original, funções são declaradas como `fun somar x y = x + y` dentro
+de `let ... in`; chamadas usam `somar(2, 3)`. O arquivo `etc/EBNF.txt` resume as
+produções da extensão implementada; a gramática executada é o arquivo `.jj`.
+
+Para conferir o ambiente, use `java -version` e `mvn -version`. Ambos devem indicar
+Java 25. O Maven baixa automaticamente o JavaCC e os plugins necessários;
+não é necessário instalar JavaCC separadamente.
+
+A origem e as adaptações da base estão documentadas em [UPSTREAM.md](UPSTREAM.md).
 
 ## Autores
 

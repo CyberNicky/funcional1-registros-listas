@@ -1,60 +1,30 @@
-(* Programa e Declarações *)
-Programa            ::= { DeclRegistro | DeclFuncao } Expressao ;
+(* Resumo da extensão implementada na etapa 1.
+   Gramática completa e executável: src/main/javacc/Functional1.jj.
+   Expressao inclui os operadores, let e if da Funcional 1 original.
+   Funções preservam a declaração: let fun f x y = Expressao in Expressao.
+   A inferência de parâmetros para inspecionar registros/listas está pendente.
+*)
 
-DeclRegistro        ::= "record" ID_TIPO "{" [ DeclCampos ] "}" ;
+DeclRegistro        ::= "let" "record" ID "{" [ DeclCampos ] "}" "in" Expressao ;
 DeclCampos          ::= DeclCampo { "," DeclCampo } ;
-DeclCampo           ::= ID_CAMPO ":" Tipo ;
+DeclCampo           ::= ID ":" TipoCampo ;
+TipoCampo           ::= "Int" | "String" | "Boolean" ;
 
-Tipo                ::= "Int" | "String" | "Boolean" | ID_TIPO | TipoLista ;
-TipoLista           ::= "[" Tipo "]" ;
-
-(* Declaração de Funções já existente na LF1 *)
-DeclFuncao          ::= "fun" ID_FUNCAO "(" [ Parametros ] ")" "=" Expressao ;
-Parametros          ::= ID_VAR { "," ID_VAR } ;
-
-(* Expressões *)
-Expressao           ::= ExprSe
-                      | InstanciacaoRegistro
-                      | LiteralLista
-                      | OperacaoLista
-                      | AcessoCampo
-                      | ExprAritmetica ;
-
-ExprSe              ::= "if" Expressao "then" Expressao "else" Expressao ;
-
-(* Registros e Acesso a Campos *)
-InstanciacaoRegistro::= ID_TIPO "{" [ AtribuicaoCampos ] "}" ;
+InstanciacaoRegistro ::= ID "{" [ AtribuicaoCampos ] "}" ;
 AtribuicaoCampos    ::= AtribuicaoCampo { "," AtribuicaoCampo } ;
-AtribuicaoCampo     ::= ID_CAMPO ":" Expressao ;
+AtribuicaoCampo     ::= ID ":" Expressao ;
 
-AcessoCampo         ::= Primaria "." ID_CAMPO ;
+LiteralLista        ::= "[" [ Expressao { "," Expressao } ] "]" ;
+OperacaoLista       ::= ( "head" | "tail" | "isEmpty" ) "(" Expressao ")" ;
 
-(* Listas e Operações *)
-LiteralLista        ::= "[" [ ElementosLista ] "]" ;
-ElementosLista      ::= Expressao { "," Expressao } ;
+Primaria            ::= Atomo { "." ID } ;
+Atomo               ::= ID | ValorPrimitivo | "(" Expressao ")"
+                      | ChamadaFuncao | InstanciacaoRegistro
+                      | LiteralLista | OperacaoLista ;
+ChamadaFuncao       ::= ID "(" Expressao { "," Expressao } ")" ;
 
-OperacaoLista       ::= "head" "(" Expressao ")"
-                      | "tail" "(" Expressao ")"
-                      | "isEmpty" "(" Expressao ")" ;
-
-(* Expressões Básicas e Primárias *)
-Primaria            ::= ID_VAR
-                      | LIT_INT
-                      | LIT_STRING
-                      | LIT_BOOL
-                      | "(" Expressao ")"
-                      | ChamadaFuncao
-                      | InstanciacaoRegistro
-                      | LiteralLista ;
-
-ChamadaFuncao       ::= ID_FUNCAO "(" [ Argumentos ] ")" ;
-Argumentos          ::= Expressao { "," Expressao } ;
-
-(* Terminais / Léxico *)
-ID_TIPO             ::= [A-Z][a-zA-Z0-9_]* ;
-ID_CAMPO            ::= [a-z][a-zA-Z0-9_]* ;
-ID_FUNCAO           ::= [a-z][a-zA-Z0-9_]* ;
-ID_VAR              ::= [a-z][a-zA-Z0-9_]* ;
-LIT_INT             ::= [0-9]+ ;
-LIT_STRING          ::= '"' { [^"\\] } '"' ;
-LIT_BOOL            ::= "true" | "false" ;
+(* ID e ValorPrimitivo usam o léxico original do arquivo .jj.
+   record, head, tail e isEmpty são palavras reservadas.
+   DeclRegistro é uma alternativa de expressão, como let e if.
+   Regras semânticas e limitações: ../docs/IMPLEMENTACAO.md.
+*)
