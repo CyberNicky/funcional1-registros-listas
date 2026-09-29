@@ -1,8 +1,8 @@
-(* Resumo da extensão implementada na etapa 1.
+(* Resumo da sintaxe da extensão (etapas 1 e 2).
    Gramática completa e executável: src/main/javacc/Functional1.jj.
    Expressao inclui os operadores, let e if da Funcional 1 original.
    Funções preservam a declaração: let fun f x y = Expressao in Expressao.
-   A inferência de parâmetros para inspecionar registros/listas está pendente.
+   A etapa 2 infere parâmetros de registros/listas sem novas anotações sintáticas.
 *)
 
 DeclRegistro        ::= "let" "record" ID "{" [ DeclCampos ] "}" "in" Expressao ;

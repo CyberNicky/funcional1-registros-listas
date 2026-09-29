@@ -1,8 +1,10 @@
 # Origem da Funcional 1
 
 > O registro abaixo descreve a importação e a conferência da base antes da
-> extensão. A gramática foi posteriormente estendida; as alterações e o estado
-> atual estão em [Documentação da implementação](docs/IMPLEMENTACAO.md).
+> extensão. A gramática e a inferência de tipos foram posteriormente estendidas;
+> também foram revisados diagnósticos, escopos e a organização do protótipo.
+> As alterações e o estado atual estão em
+> [Documentação da implementação](docs/IMPLEMENTACAO.md).
 
 A implementação em `src/main/java/lf1/plp/` e a gramática
 `src/main/javacc/Functional1.jj` foram importadas da pasta `Funcional1` do

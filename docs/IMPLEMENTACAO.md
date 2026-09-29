@@ -4,6 +4,21 @@ Este documento acompanha a implementação de registros imutáveis e listas de
 registros sobre a base `lf1.plp` do PLP. O README apresenta a proposta; aqui são
 registradas as decisões, funcionalidades entregues, testes e próximas etapas.
 
+## Estado atual
+
+As etapas 1 e 2 implementam registros imutáveis, listas homogêneas e inferência
+para processamento recursivo, sem anotações de tipo nos parâmetros. A etapa 3
+consolida a documentação e os exemplos, melhora os diagnósticos e corrige a
+ligação de tipos de registro sob sombreamento.
+
+O [roteiro de apresentação](APRESENTACAO.md) contém os programas e resultados
+esperados. O [README](../README.md) apresenta a sintaxe executável atual.
+
+As seções abaixo preservam o histórico. A limitação de inferência e a rejeição
+estática de `head([])` da etapa 1 foram substituídas pelas regras da etapa 2.
+Na etapa 3, construtores passaram a guardar a ligação nominal verificada, e o
+protótipo foi movido para o pacote `br.ufpe.cin.lf1.prototipo`.
+
 ## Etapa 1 — integração das construções básicas (22/09/2026)
 
 - Declaração com escopo: `let record Pessoa { nome: String, idade: Int } in ...`.
@@ -163,7 +178,7 @@ padrão, `head([])`, `tail([])` e um campo `Int` preenchido com `true` retornara
 mensagens de erro e código de saída 1. Permanecem os três avisos de ambiguidade
 do JavaCC nos operadores `==`, `+` e `and`, já presentes na gramática-base.
 
-### Próximas etapas
+### Próximas etapas registradas ao concluir a etapa 1
 
 1. Estender a inferência de tipos dos parâmetros, permitindo `p.nome`,
    `head(pessoas)` e demais operações dentro de funções que recebam esses dados.
@@ -180,3 +195,271 @@ do JavaCC nos operadores `==`, `+` e `and`, já presentes na gramática-base.
 Esta entrega não implementa atualização de registros, inserção em listas,
 listas genéricas ou métodos. As limitações preexistentes da linguagem-base
 continuam fora desta etapa.
+
+
+## Etapa 2 — inferência de parâmetros e recursão (22/09/2026)
+
+### O que foi implementado
+
+- Inferência a partir do uso de parâmetros, incluindo campos de registros,
+  `head`, `tail`, `isEmpty` e construção de listas com parâmetros.
+- Relação entre o tipo do argumento e o retorno: uma função que retorna
+  `head(xs)` preserva o tipo do registro recebido em `xs`.
+- Acúmulo das restrições de campos: `p.nome` exige um registro com `nome`;
+  `p.idade + 1` também exige `idade` de tipo `Int`.
+- Assinatura compartilhada entre corpo e chamadas recursivas, incluindo todos
+  os parâmetros e o retorno. Uma chamada recursiva não pode trocar uma lista
+  por um inteiro ou retornar um tipo incompatível com o caso-base.
+- Instanciação independente dos tipos genéricos em cada chamada de função,
+  preservando relações entre parâmetros, elementos de lista, campos e retorno.
+- Preservação das restrições dos parâmetros capturados por funções internas.
+- Rejeição de tipos recursivos impossíveis, evitando ciclos na inferência.
+
+### Exemplos executáveis
+
+`examples/registros/somar-idades.lf1`:
+
+```text
+let record Pessoa { nome: String, idade: Int } in
+let fun somarIdades pessoas =
+    if isEmpty(pessoas)
+    then 0
+    else head(pessoas).idade + somarIdades(tail(pessoas))
+in
+let var pessoas = [
+    Pessoa { nome: "Monique", idade: 23 },
+    Pessoa { nome: "Bruno", idade: 25 }
+] in
+somarIdades(pessoas)
+```
+
+Resultado: `48`. Com `somarIdades([])`, o resultado é `0`.
+
+`examples/registros/obter-nome.lf1`:
+
+```text
+let record Pessoa { nome: String, idade: Int } in
+let fun obterNome pessoa = pessoa.nome in
+obterNome(Pessoa { nome: "Monique", idade: 23 })
+```
+
+Resultado: `Monique`. O arquivo `examples/registros/contar.lf1` percorre a lista
+recursivamente, sem depender de seus campos, e retorna `2`.
+
+### Regras da inferência
+
+**Restrições de campos e identidade nominal.** Uma função como `obterNome` não
+escolhe um tipo de registro apenas porque ele possui um campo chamado `nome`.
+Ela exige esse campo no argumento e relaciona seu tipo ao retorno. Assim, pode
+receber `Pessoa` e `Produto` em chamadas distintas, se ambos tiverem `nome`.
+Se o corpo concatenar esse campo com uma string, o campo deverá ser `String`.
+Sem essa operação, o campo pode ter qualquer um dos tipos primitivos permitidos.
+
+Isso não torna `Pessoa` e `Produto` o mesmo tipo: uma lista com valores dos dois
+continua inválida. Parâmetros relacionados pelo corpo também precisam concordar.
+Por exemplo, `fun par a b = [a, b]` exige dois registros do mesmo tipo nominal,
+assim como `fun escolher a b = if true then a else b` exige resultados de tipos
+compatíveis.
+
+**Chamadas independentes.** Cada chamada recebe uma cópia das variáveis de tipo
+generalizadas e de suas restrições. Uma chamada de `contar` com `[Pessoa]` não
+impede outra chamada com `[Produto]`. Campos e retornos compartilham as mesmas
+variáveis dentro da cópia, preservando sua relação.
+
+**Recursão.** Enquanto o corpo é verificado, sua assinatura ainda não está
+generalizada. As chamadas recursivas usam os mesmos tipos do corpo, impedindo
+mudança de tipo entre uma chamada e a próxima. O sistema não implementa
+recursão polimórfica nem adiciona recursão mútua entre declarações simultâneas.
+
+**Funções internas.** Apenas variáveis de tipo que não estão livres no ambiente
+externo são generalizadas. Se uma função interna consulta `p.idade`, a restrição
+continua vinculada ao parâmetro `p` da função externa. Isso evita aceitar uma
+chamada externa com um registro sem esse campo.
+
+**Lista vazia.** `[]` agora recebe uma variável de elemento restrita a registros,
+que pode ser refinada pelo contexto. Por isso, `somarIdades([])` é aceito mesmo
+que a lista não contenha um elemento do qual extrair um tipo nominal.
+
+`head([])` passa pela verificação e gera erro somente se executado, como
+`tail([])`. Essa mudança em relação à etapa 1 permite verificar funções com
+caso-base sem rejeitar um ramo que não será executado. Por exemplo:
+
+```text
+if true then 1 else head([]).idade
+```
+
+O resultado é `1`. Já `head([]) + 1` continua sendo um erro de tipo: o resultado
+de `head` precisa ser registro, não inteiro. A inferência não comprova que uma
+lista é não vazia; `head` e `tail` mantêm a proteção em tempo de execução.
+
+### Alterações na implementação
+
+| Arquivo/classe | Mudança |
+| --- | --- |
+| `functional1/util/Inferencia.java` | Resolução de variáveis, unificação, restrições de campos, verificação de ciclos, coleta de variáveis livres e cópia de tipos |
+| `TipoPolimorfico` | Variáveis ligadas a outros tipos, com restrições livre, primitivo ou registro e campos exigidos |
+| `TipoFuncao` | Generalização e instanciação por chamada, validação de aridade e relação entre argumentos e retorno |
+| `DefFuncao`, `DecFuncao` | Inferência unificada do corpo e da assinatura recursiva, com restauração dos escopos em caso de erro |
+| `AmbienteCompilacao`, `ContextoCompilacao` | Consulta dos tipos visíveis para preservar tipos capturados |
+| `TipoPrimitivo` | Comparação por unificação, propagando restrições para variáveis de tipo |
+| `TipoLista`, `ExpLista` | Elementos com tipos inferidos, sempre restritos a registros |
+| `ExpCampo`, `ExpOperacaoLista` | Inferência sobre parâmetros em lugar da rejeição provisória da etapa 1 |
+
+Diferentemente da etapa 1, esta etapa adapta algumas classes importadas do PLP,
+pois o mecanismo anterior separava os parâmetros do corpo dos parâmetros da
+assinatura recursiva e não tratava as novas restrições. A cópia de referência
+`../PLP/` não foi alterada. A sintaxe JavaCC não precisou mudar nesta etapa.
+
+A antiga limpeza de tipos instanciados entre chamadas foi substituída por cópias
+de variáveis generalizadas. As relações internas são preservadas por um mapa
+único de cópia para domínio e imagem da função. Não existe cache global de tipos
+inferidos; uma nova verificação de programa começa com um ambiente novo.
+
+### Testes e reprodução
+
+```sh
+mvn clean verify
+java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/registros/somar-idades.lf1
+java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/registros/contar.lf1
+java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/registros/obter-nome.lf1
+```
+
+`InferenciaTest` acrescenta 24 testes. Eles cobrem soma recursiva, contagem,
+projeção de campos, retornos de registros/listas, chamadas independentes,
+construção de registros e listas com parâmetros, restrições compartilhadas,
+funções internas, recursão com acumulador, lista vazia, conflitos de tipos,
+aridade, tipos impossíveis, repetição da verificação e clonagem do programa.
+
+Dois testes da etapa 1 foram atualizados: a inferência antes rejeitada agora é
+exercitada como funcionalidade; `head([])` agora tem seu erro validado na
+execução. Os oito testes originais da linguagem-base continuam na suíte.
+
+Validação concluída: `mvn clean verify` passou com **50 testes, sem falhas**.
+Pelo JAR, `somar-idades.lf1`, `contar.lf1` e `obter-nome.lf1` retornaram `48`,
+`2` e `Monique`, respectivamente. Pela entrada padrão, a soma de `[]` retornou
+`0`; um campo `idade: Boolean`, uma chamada recursiva com inteiro no lugar da
+lista e a execução de `head([])` terminaram com código 1 e mensagens de erro.
+Os três avisos já conhecidos do JavaCC permanecem, sem novos avisos de gramática.
+
+### Limites mantidos e próximos trabalhos
+
+- Campos aceitam somente `Int`, `String` e `Boolean`; registros e listas como
+  campos não foram adicionados.
+- Listas continuam contendo somente registros do mesmo tipo nominal.
+- A etapa mantém funções de primeira ordem e a semântica de execução da LF1;
+  não implementa funções como valores, closures ou outro modelo de escopo.
+- Não há atualização de campos, inserção de elementos ou listas genéricas.
+- Declarações de tipos continuam usando `let record ... in ...` próprios.
+- O protótipo Java independente permanece disponível, mas não é usado pelo
+  parser e interpretador integrados.
+
+Ao concluir a etapa 2, o trabalho seguinte previsto era consolidar a apresentação e os exemplos,
+revisar mensagens de diagnóstico e avaliar se campos compostos entrariam no escopo.
+O processamento recursivo de listas de registros descrito na proposta está
+implementado nesta etapa.
+
+
+## Etapa 3 — consolidação, diagnósticos e revisão (22/09/2026)
+
+### Documentação e apresentação
+
+O README foi reescrito para refletir as funcionalidades implementadas, com
+programas completos na sintaxe real, resultados esperados, limites e comandos
+de execução. Os trechos de código são exercitados por um teste de integração.
+A analogia com `struct` explica a organização dos campos e explicita a diferença
+de imutabilidade.
+
+O arquivo [APRESENTACAO.md](APRESENTACAO.md) organiza uma demonstração da base,
+dos registros, das funções, das listas, da imutabilidade, da recursão e dos erros.
+Foram adicionados exemplos de preservação da lista original e de caso-base com
+lista vazia, além de seis programas inválidos em `examples/erros/`.
+
+O manifesto `examples/resultados.tsv` lista 16 programas com código de saída
+e trecho de saída esperado. Os testes executam todos pelo CLI em processos Java
+separados; a validação final também os executa pelo JAR empacotado.
+
+### Revisão da integração e correções
+
+**Identidade nominal sob sombreamento.** Foi reproduzida uma falha em uma função
+que criava `P { x: n }`: se a chamada acontecesse dentro de outro `let record P`,
+o avaliador usava a definição de `P` do chamador, embora a inferência tivesse
+usado a definição visível na declaração da função. Isso podia tornar falsa a
+igualdade de dois valores que deveriam ser iguais.
+
+`ExpRegistro` agora guarda o tipo nominal resolvido durante a verificação e o
+utiliza ao criar o valor. A clonagem da expressão preserva essa ligação. Não
+se trata de estado global: a ligação pertence ao nó da AST. Para ASTs avaliadas
+diretamente sem verificação, permanece a resolução pelo ambiente de execução;
+o caminho suportado pelo CLI sempre verifica o programa antes de executá-lo.
+
+Essa mudança substitui a resolução exclusivamente dinâmica do construtor
+registrada na etapa 1. Não altera o modelo geral de escopo de variáveis e funções
+da base, nem implementa closures.
+
+**Restauração de ambientes.** `Aplicacao.avaliar`, `ExpDeclaracao.avaliar` e
+`ExpDeclaracao.getTipo` agora restauram os escopos com `finally`, inclusive
+quando ocorre um erro. Testes verificam que uma variável externa volta a ser
+visível após a falha de uma função e após a falha de um `let`. A busca de função
+na avaliação também passou a usar a exceção de identificador não declarado,
+em vez de identificador já declarado, no respectivo caminho de erro.
+
+### Diagnósticos
+
+- O CLI separa `Erro de sintaxe`, `Erro de tipo` e `Erro de execução`, mantendo
+  saída 1 em falhas de programa e saída 2 para opções inválidas.
+- `ExpressaoLocalizada` envolve as expressões da extensão e chamadas de função
+  com posição obtida dos tokens do JavaCC. A expressão mantém seu tipo e valor;
+  a posição apenas acompanha os erros.
+- `ErroExtensao` preserva a posição mais interna disponível. Chamadas acrescentam
+  o nome da função, sem repetir uma cadeia inteira de contextos recursivos.
+- Campos incompatíveis incluem o registro, o campo, o tipo esperado e o recebido.
+  A posição aponta para o início do campo na construção.
+- Campos repetidos e tipos de campo não suportados incluem posição nos erros
+  sintáticos gerados manualmente pela gramática.
+
+Por exemplo, `examples/erros/argumento-funcao.lf1` identifica a função
+`somarIdades`, o argumento 1 e sua incompatibilidade com a exigência de `idade`
+inteira. `examples/erros/head-vazia.lf1` produz um erro de execução na linha 1,
+coluna 1.
+
+A localização cobre as construções da extensão e chamadas. Erros herdados de
+outras classes da base podem continuar sem posição; esta etapa não reescreve
+todo o sistema de diagnósticos do PLP.
+
+### Organização do protótipo
+
+O código independente foi movido de `br.ufpe.cin.lf1.{ast,eval,types,values,
+typechecker}` para `br.ufpe.cin.lf1.prototipo`, junto com `DemoRegistros`.
+Seu comportamento histórico foi preservado. O comando `--demo-registros`
+continua disponível e agora identifica explicitamente que não executa `.lf1`.
+
+Os dois desenhos antigos de arquitetura foram movidos de `etc/` para
+`docs/historico/`, com uma [explicação do histórico](historico/README.md).
+O pacote integrado `lf1.plp` continua sem depender dessas classes.
+
+### Validação
+
+Foram acrescentados 11 testes em `ConsolidacaoTest`: identidade nominal em
+funções sob sombreamento, clonagem, recuperação de escopo após erros de tipo e
+execução, localização de campos e chamadas, erros sintáticos manuais, fases do
+CLI, UTF-8, arquivo ausente, opções inválidas, identificação do protótipo,
+manifesto dos exemplos e programas completos do README.
+
+As funcionalidades permanecem no escopo inicial: campos primitivos, listas de
+registros, três operações de listas e funções de primeira ordem. Campos
+compostos e novas operações não foram adicionados nesta consolidação.
+
+Validação final concluída com JDK 25 e Maven:
+
+- `mvn clean verify`: **61 testes, sem falhas ou erros**.
+- **16 exemplos executados pelo JAR**, com resultados e códigos de saída
+  conferidos contra `examples/resultados.tsv`, incluindo os seis erros esperados.
+- Entrada padrão, `--help` e `--demo-registros` conferidos no JAR.
+- Links locais do README, UPSTREAM e documentos de `docs/` conferidos.
+- JAR inspecionado: protótipo presente no pacote novo, sem classes residuais dos
+  pacotes anteriores após a compilação limpa.
+- `git diff --check` sem problemas de espaços. Nenhum commit foi criado.
+
+Permanecem os três avisos conhecidos do JavaCC em `==`, `+` e `and` e o aviso de
+operações não verificadas em `StackHandler`, herdados da base; a geração do
+parser, a compilação e os testes terminam com sucesso.

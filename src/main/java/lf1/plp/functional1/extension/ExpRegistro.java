@@ -13,6 +13,8 @@ import lf1.plp.expressions2.memory.VariavelNaoDeclaradaException;
 public final class ExpRegistro extends ExpressaoExtensao {
     private final String nome;
     private final Map<String, Expressao> campos;
+    // Ligação nominal resolvida no escopo da declaração da expressão.
+    private TipoRegistro tipoVerificado;
     public ExpRegistro(String nome, Map<String, Expressao> campos) {
         this.nome = nome;
         this.campos = Collections.unmodifiableMap(new LinkedHashMap<>(campos));
@@ -28,20 +30,25 @@ public final class ExpRegistro extends ExpressaoExtensao {
             verificar(campo.getValue(), amb);
             Tipo recebido = campo.getValue().getTipo(amb);
             Tipo esperado = tipo.campos().get(campo.getKey());
-            if (!esperado.eIgual(recebido)) throw new ErroExtensao("Tipo incompatível no campo "
-                + campo.getKey() + ": esperado " + esperado + ", recebido " + recebido);
+            if (!esperado.eIgual(recebido)) throw ExpressaoLocalizada.localizar(campo.getValue(),
+                new ErroExtensao("Tipo incompatível no campo '" + campo.getKey() + "' de " + nome
+                    + ": esperado " + esperado + ", recebido " + recebido));
         }
+        tipoVerificado = tipo;
         return tipo;
     }
     public ValorRegistro avaliar(AmbienteExecucao amb) {
-        var definicao = (ExpDeclaracaoRegistro.Definicao) amb.get(TipoRegistro.chave(nome));
+        TipoRegistro tipo = tipoVerificado != null ? tipoVerificado
+            : ((ExpDeclaracaoRegistro.Definicao) amb.get(TipoRegistro.chave(nome))).valor();
         Map<String, Valor> valores = new LinkedHashMap<>();
         campos.forEach((campo, exp) -> valores.put(campo, exp.avaliar(amb)));
-        return new ValorRegistro(definicao.valor(), valores);
+        return new ValorRegistro(tipo, valores);
     }
     public ExpRegistro clone() {
         Map<String, Expressao> copia = new LinkedHashMap<>();
         campos.forEach((campo, exp) -> copia.put(campo, exp.clone()));
-        return new ExpRegistro(nome, copia);
+        ExpRegistro resultado = new ExpRegistro(nome, copia);
+        resultado.tipoVerificado = tipoVerificado;
+        return resultado;
     }
 }

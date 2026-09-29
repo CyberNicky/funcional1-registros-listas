@@ -105,7 +105,9 @@ public class RegistrosListasTest {
     }
 
     @Test public void operacoesEmListaVaziaTemErroExplicito() throws Exception {
-        erroTipo("head([])", "lista vazia");
+        Programa headVazia = parse("head([])");
+        assertTrue(headVazia.checaTipo());
+        assertThrows(ErroExtensao.class, headVazia::executar);
         Programa tail = parse("tail([])");
         assertTrue(tail.checaTipo());
         assertThrows(ErroExtensao.class, tail::executar);
@@ -130,9 +132,10 @@ public class RegistrosListasTest {
         assertThrows(ParseException.class, () -> parse("head([], [])"));
     }
 
-    @Test public void inferenciaAindaPendenteTemMensagemClara() throws Exception {
-        erroTipo(PESSOA + "let fun nome p = p.nome in nome(" + MONIQUE + ")", "ainda não está implementada");
-        erroTipo("let fun vazia xs = isEmpty(xs) in vazia([])", "ainda não está implementada");
+    @Test public void infereParametrosDeRegistroELista() throws Exception {
+        assertEquals("Monique", ((ValorString) avaliar(PESSOA
+            + "let fun nome p = p.nome in nome(" + MONIQUE + ")")).valor());
+        assertTrue(((ValorBooleano) avaliar("let fun vazia xs = isEmpty(xs) in vazia([])")).valor());
     }
 
     @Test public void igualdadeDeRegistrosEListasUsaConteudo() throws Exception {

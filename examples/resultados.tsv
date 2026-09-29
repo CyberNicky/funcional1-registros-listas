@@ -1,0 +1,17 @@
+# arquivo (relativo a examples)\tcódigo de saída\ttrecho esperado em stdout ou stderr
+funcional1/variaveis.lf1	0	Resultado: 25
+funcional1/funcoes.lf1	0	Resultado: 14
+funcional1/fatorial.lf1	0	Resultado: 120
+registros/pessoa.lf1	0	Resultado: Monique
+registros/listas.lf1	0	Resultado: 48
+registros/obter-nome.lf1	0	Resultado: Monique
+registros/contar.lf1	0	Resultado: 2
+registros/somar-idades.lf1	0	Resultado: 48
+registros/imutabilidade.lf1	0	Resultado: Monique / Bruno
+registros/lista-vazia.lf1	0	Resultado: 0
+erros/tipo-campo.lf1	1	Erro de tipo:
+erros/campo-inexistente.lf1	1	Campo inexistente
+erros/lista-heterogenea.lf1	1	mesmo tipo
+erros/argumento-funcao.lf1	1	função 'somarIdades': Tipo incompatível no argumento 1
+erros/head-vazia.lf1	1	Erro de execução:
+erros/atribuicao-campo.lf1	1	Erro de sintaxe:

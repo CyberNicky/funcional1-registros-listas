@@ -1,5 +1,6 @@
 package br.ufpe.cin.lf1;
 
+import br.ufpe.cin.lf1.prototipo.DemoRegistros;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -20,6 +21,7 @@ import lf1.plp.functional1.parser.TokenMgrError;
 public class Main {
     public static void main(String[] args) {
         if (args.length == 1 && args[0].equals("--demo-registros")) {
+            System.out.println("Protótipo histórico em Java; não executa programas .lf1.");
             DemoRegistros.main(new String[0]);
             return;
         }
@@ -32,15 +34,18 @@ public class Main {
             System.exit(2);
             return;
         }
+        String fase = "de sintaxe";
         try (Reader input = args.length == 0
                 ? new InputStreamReader(System.in, StandardCharsets.UTF_8)
                 : Files.newBufferedReader(Path.of(args[0]), StandardCharsets.UTF_8)) {
             Programa programa = new Func1Parser(input).Input();
+            fase = "de tipo";
             if (!programa.checaTipo()) {
                 System.err.println("Erro de tipo: programa rejeitado pela Funcional 1.");
                 System.exit(1);
                 return;
             }
+            fase = "de execução";
             Valor valor = programa.executar();
             String resultado = switch (valor) {
                 case ValorInteiro inteiro -> Integer.toString(inteiro.valor());
@@ -57,7 +62,7 @@ public class Main {
             System.exit(1);
         } catch (Exception e) {
             String detalhe = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
-            System.err.println("Erro na verificação ou execução: " + detalhe);
+            System.err.println("Erro " + fase + ": " + detalhe);
             System.exit(1);
         }
     }
@@ -65,6 +70,6 @@ public class Main {
     private static void usage() {
         System.out.println("Uso: java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar [arquivo.lf1]");
         System.out.println("Sem arquivo, lê um programa da entrada padrão até EOF.");
-        System.out.println("Opções: --help | --demo-registros");
+        System.out.println("Opções: --help | --demo-registros (protótipo histórico em Java)");
     }
 }
