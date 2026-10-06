@@ -19,6 +19,7 @@ public final class ExpDeclaracaoRegistro extends ExpressaoExtensao {
         amb.incrementa();
         try {
             amb.map(TipoRegistro.chave(tipo.getNome()), tipo);
+            tipo.resolverCampos(amb);
             verificar(corpo, amb);
             return corpo.getTipo(amb);
         } finally { amb.restaura(); }

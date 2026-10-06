@@ -7,7 +7,7 @@ import lf1.plp.expressions1.util.TipoPrimitivo;
 
 /** Variável de inferência. Instâncias pertencem a uma verificação ou chamada. */
 public class TipoPolimorfico implements Tipo {
-    enum Restricao { LIVRE, PRIMITIVO, REGISTRO }
+    enum Restricao { LIVRE, REGISTRO }
     Tipo vinculo;
     Restricao restricao = Restricao.LIVRE;
     final Map<String, Tipo> campos = new LinkedHashMap<>();
@@ -17,7 +17,6 @@ public class TipoPolimorfico implements Tipo {
         if (resolvido != this) return resolvido.getNome();
         return switch (restricao) {
             case LIVRE -> "?";
-            case PRIMITIVO -> "?primitivo";
             case REGISTRO -> "?registro" + campos;
         };
     }

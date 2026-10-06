@@ -100,8 +100,8 @@ public class ConsolidacaoTest {
         ParseException e = assertThrows(ParseException.class,
             () -> parse("let record P { x: Int, x: String } in 1"));
         assertTrue(e.getMessage().contains("Linha 1, coluna"));
-        e = assertThrows(ParseException.class, () -> parse("let record P { x: Outro } in 1"));
-        assertTrue(e.getMessage().contains("Linha 1, coluna"));
+        e = assertThrows(ParseException.class, () -> parse("let record P { x: [] } in 1"));
+        assertTrue(e.getMessage().contains("line 1, column"));
     }
 
     @Test public void cliDistingueTipoSintaxeEExecucao() throws Exception {
@@ -145,11 +145,11 @@ public class ConsolidacaoTest {
         }
     }
 
-    @Test public void programasCompletosDoReadmeSaoExecutaveis() throws Exception {
+    @Test public void programasCompletosDoGuiaSaoExecutaveis() throws Exception {
         var matcher = Pattern.compile("```text\\R(.*?)```", Pattern.DOTALL)
-            .matcher(Files.readString(Path.of("README.md")));
+            .matcher(Files.readString(Path.of("docs/GUIA_EXECUCAO.md")));
         int exemplos = 0;
         while (matcher.find()) { avaliar(matcher.group(1)); exemplos++; }
-        assertTrue("README deve apresentar exemplos completos", exemplos >= 3);
+        assertTrue("Guia deve apresentar exemplos completos", exemplos >= 3);
     }
 }

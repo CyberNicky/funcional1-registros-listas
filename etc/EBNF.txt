@@ -1,4 +1,4 @@
-(* Resumo da sintaxe da extensão (etapas 1 e 2).
+(* Resumo da sintaxe da extensão, incluindo listas genéricas (06/10/2026).
    Gramática completa e executável: src/main/javacc/Functional1.jj.
    Expressao inclui os operadores, let e if da Funcional 1 original.
    Funções preservam a declaração: let fun f x y = Expressao in Expressao.
@@ -8,7 +8,7 @@
 DeclRegistro        ::= "let" "record" ID "{" [ DeclCampos ] "}" "in" Expressao ;
 DeclCampos          ::= DeclCampo { "," DeclCampo } ;
 DeclCampo           ::= ID ":" TipoCampo ;
-TipoCampo           ::= "Int" | "String" | "Boolean" ;
+TipoCampo           ::= "Int" | "String" | "Boolean" | ID | "[" TipoCampo "]" ;
 
 InstanciacaoRegistro ::= ID "{" [ AtribuicaoCampos ] "}" ;
 AtribuicaoCampos    ::= AtribuicaoCampo { "," AtribuicaoCampo } ;
@@ -26,5 +26,7 @@ ChamadaFuncao       ::= ID "(" Expressao { "," Expressao } ")" ;
 (* ID e ValorPrimitivo usam o léxico original do arquivo .jj.
    record, head, tail e isEmpty são palavras reservadas.
    DeclRegistro é uma alternativa de expressão, como let e if.
+   TipoCampo aceita registros nomeados no escopo e listas aninhadas.
+   Listas têm elementos de tipos compatíveis; não são restritas a registros.
    Regras semânticas e limitações: ../docs/IMPLEMENTACAO.md.
 *)

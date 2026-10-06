@@ -15,3 +15,11 @@ erros/lista-heterogenea.lf1	1	mesmo tipo
 erros/argumento-funcao.lf1	1	função 'somarIdades': Tipo incompatível no argumento 1
 erros/head-vazia.lf1	1	Erro de execução:
 erros/atribuicao-campo.lf1	1	Erro de sintaxe:
+listas/inteiros.lf1	0	Resultado: 6
+listas/textos.lf1	0	Resultado: Bruno
+listas/booleanos.lf1	0	Resultado: false
+listas/aninhadas.lf1	0	Resultado: 3
+registros/campos-lista.lf1	0	Resultado: 25
+registros/lista-no-registro.lf1	0	Resultado: 48
+erros/lista-tipos-incompativeis.lf1	1	mesmo tipo
+erros/campo-lista.lf1	1	Tipo incompatível no campo 'idades'

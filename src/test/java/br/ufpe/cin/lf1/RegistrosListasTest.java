@@ -95,10 +95,10 @@ public class RegistrosListasTest {
             "let record P { x: Int } in let var P = 7 in P { x: P }.x")).valor());
     }
 
-    @Test public void rejeitaListasPrimitivasAninhadasEHeterogeneas() throws Exception {
-        erroTipo("[1, 2]", "somente registros");
-        erroTipo(PESSOA + "[" + MONIQUE + ", 1]", "somente registros");
-        erroTipo("[[]]", "somente registros");
+    @Test public void rejeitaListasHeterogeneasEOperacoesInvalidas() throws Exception {
+        erroTipo("[1, true]", "mesmo tipo");
+        erroTipo(PESSOA + "[" + MONIQUE + ", 1]", "mesmo tipo");
+        erroTipo("[[1], [true]]", "mesmo tipo");
         erroTipo("head(1)", "exige uma lista");
         erroTipo("tail(true)", "exige uma lista");
         erroTipo("isEmpty(\"abc\")", "exige uma lista");
@@ -119,16 +119,16 @@ public class RegistrosListasTest {
     @Test public void colecoesDosValoresSaoImutaveis() throws Exception {
         ValorLista lista = (ValorLista) avaliar(PESSOA + "[" + MONIQUE + ", " + BRUNO + "]");
         assertThrows(UnsupportedOperationException.class, () -> lista.valor().clear());
-        assertThrows(UnsupportedOperationException.class, () -> lista.head().valor().put("idade", new ValorInteiro(99)));
+        assertThrows(UnsupportedOperationException.class, () -> ((ValorRegistro) lista.head()).valor().put("idade", new ValorInteiro(99)));
         assertEquals(1, lista.tail().valor().size());
         assertEquals(2, lista.valor().size());
-        assertEquals(Integer.valueOf(23), ((ValorInteiro) lista.head().campo("idade")).valor());
+        assertEquals(Integer.valueOf(23), ((ValorInteiro) ((ValorRegistro) lista.head()).campo("idade")).valor());
     }
 
-    @Test public void rejeitaAtribuicaoECamposCompostosNestaEtapa() {
+    @Test public void rejeitaAtribuicaoESintaxeInvalida() {
         assertThrows(ParseException.class, () -> parse(PESSOA + "let var p = " + MONIQUE + " in p.idade = 99"));
-        assertThrows(ParseException.class, () -> parse("let record P { x: Pessoa } in 1"));
-        assertThrows(ParseException.class, () -> parse("let record P { x: [Pessoa] } in 1"));
+        assertThrows(ParseException.class, () -> parse("let record P { x: [] } in 1"));
+        assertThrows(ParseException.class, () -> parse("let record P { x: [Int } in 1"));
         assertThrows(ParseException.class, () -> parse("head([], [])"));
     }
 

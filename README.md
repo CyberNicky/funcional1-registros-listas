@@ -1,203 +1,198 @@
 # Extensão da Linguagem Funcional 1: Registros Imutáveis e Listas de Registros
 
-Projeto baseado na **Funcional 1 do PLP**, com registros imutáveis, listas
-homogêneas de registros e processamento por funções recursivas.
-
 - [Documentação da implementação e histórico das etapas](docs/IMPLEMENTACAO.md)
 - [Roteiro de apresentação e resultados esperados](docs/APRESENTACAO.md)
 - [Origem da base e adaptações](UPSTREAM.md)
 - [Protótipo histórico](docs/historico/README.md)
+- [Guia de execução e exemplos implementados](docs/GUIA_EXECUCAO.md)
 
-## Proposta e funcionalidades
 
-Um registro agrupa campos nomeados de tipos diferentes. Sua organização se
-assemelha à de uma `struct` em C, mas os campos não podem ser alterados depois
-da criação. Os registros contêm dados, sem métodos; funções externas realizam
-seu processamento.
+> **Atualização de escopo — 06/10/2026:** por orientação do professor, a extensão
+> passou a aceitar listas de qualquer tipo de dado da Funcional 1, incluindo
+> listas aninhadas, e campos de registro com tipos compostos como `[Int]` e
+> `[Pessoa]`. Os elementos de cada lista continuam com tipos compatíveis.
+> O texto abaixo preserva a proposta original. O funcionamento atual está no
+> [guia de execução](docs/GUIA_EXECUCAO.md) e na
+> [documentação da implementação](docs/IMPLEMENTACAO.md).
 
-A extensão implementa declaração e criação de registros, acesso a campos,
-listas imutáveis, `head`, `tail`, `isEmpty`, inferência dos parâmetros de funções,
-recursão e verificação de tipos. Usa o parser, os ambientes e as interfaces
-`Expressao`, `Valor` e `Tipo` da Funcional 1.
+## Tema
 
-## Registros e acesso a campos
+Extensão da Linguagem Funcional 1 com suporte a registros imutáveis e listas de registros.
 
-Este programa completo declara um tipo, cria uma pessoa e retorna seu nome:
+## Descrição da proposta
+
+O projeto propõe adicionar à Linguagem Funcional 1 uma estrutura de registro semelhante à struct da linguagem C. Um registro permitirá reunir, em um único valor, campos com nomes e tipos diferentes.
+
+Por exemplo, um registro poderá representar uma pessoa com nome e idade:
 
 ```text
-let record Pessoa { nome: String, idade: Int } in
-let var pessoa = Pessoa { nome: "Monique", idade: 23 } in
+record Pessoa {
+    nome: String,
+    idade: Int
+}
+```
+
+Um valor desse tipo poderá ser criado da seguinte forma:
+
+```text
+pessoa = Pessoa {
+    nome: "Monique",
+    idade: 23
+}
+```
+
+Os registros conterão somente dados e não possuirão métodos. Seu processamento será realizado por funções externas, seguindo o paradigma funcional.
+
+Os registros também serão imutáveis: depois de criado, um valor não poderá ter seus campos modificados diretamente.
+
+## Acesso aos campos
+
+A linguagem permitirá acessar os campos de um registro por meio de seus nomes:
+
+```text
 pessoa.nome
+pessoa.idade
 ```
 
-Resultado: `Monique`. A expressão `pessoa.idade` retornaria `23`.
-
-Os campos aceitam `Int`, `String` e `Boolean`. Cada declaração define um tipo
-nominal: registros de tipos diferentes não são intercambiáveis apenas por terem
-os mesmos campos. A ordem dos campos na criação pode variar; todos os campos
-declarados precisam estar presentes, sem extras ou repetições.
-
-A declaração `let record ... in ...` delimita o escopo do tipo. Para declarar
-outro tipo, use outro `let record` dentro do corpo. A criação de variáveis
-preserva a sintaxe `let var ... in ...` da linguagem-base.
-
-## Funções e inferência
-
-Parâmetros não precisam de anotações de tipos:
+Também será possível utilizar esse acesso dentro de funções:
 
 ```text
-let record Pessoa { nome: String, idade: Int } in
-let fun obterNome pessoa = pessoa.nome in
-obterNome(Pessoa { nome: "Monique", idade: 23 })
+fun obterNome(pessoa) =
+    pessoa.nome
 ```
 
-Resultado: `Monique`. O acesso a `pessoa.nome` exige que o argumento seja um
-registro com esse campo. Funções são declaradas com parâmetros separados por
-espaço, como `fun somar x y = x + y`; chamadas usam `somar(2, 3)`.
+## Listas de registros
 
-A inferência mantém as restrições de cada função e permite chamadas independentes
-com tipos compatíveis. Uma função que apenas consulta `nome` pode receber
-registros de tipos diferentes em chamadas distintas. Isso não permite misturar
-esses tipos em uma mesma lista.
-
-## Listas e imutabilidade
-
-Listas contêm somente registros do mesmo tipo. As operações disponíveis são:
-
-| Operação | Resultado |
-| --- | --- |
-| `head(lista)` | Primeiro registro |
-| `tail(lista)` | Nova lista sem o primeiro registro |
-| `isEmpty(lista)` | `true` se a lista estiver vazia; `false` caso contrário |
+A linguagem permitirá criar listas imutáveis contendo registros do mesmo tipo:
 
 ```text
-let record Pessoa { nome: String, idade: Int } in
-let var pessoas = [
+pessoas = [
     Pessoa { nome: "Monique", idade: 23 },
     Pessoa { nome: "Bruno", idade: 25 }
-] in
-let var restantes = tail(pessoas) in
-head(pessoas).nome ++ " / " ++ head(restantes).nome
+]
 ```
 
-Resultado: `Monique / Bruno`. O primeiro elemento da lista original continua
-sendo Monique depois de criar `restantes`.
+Nesse exemplo, pessoas será uma lista de valores do tipo Pessoa.
 
-A lista vazia é escrita como `[]`, e seu tipo de elemento é inferido pelo contexto.
-`head` e `tail` de lista vazia geram erro se forem executados. Não existe atribuição
-a campos ou elementos, nem operações de inserção ou atualização.
+Para manter o escopo reduzido, esta proposta tratará especificamente de listas de registros. A implementação de listas genéricas para todos os tipos não faz parte da versão inicial.
+
+## Operações sobre listas
+
+Serão implementadas somente três operações:
+
+- head(lista): retorna o primeiro registro da lista;
+- tail(lista): retorna uma nova lista sem o primeiro registro;
+- isEmpty(lista): verifica se a lista está vazia.
+Exemplos:
+
+```text
+head(pessoas)
+tail(pessoas)
+isEmpty(pessoas)
+```
+
+Como as listas são imutáveis, nenhuma dessas operações modificará a lista original.
 
 ## Processamento recursivo
 
+As operações adicionadas poderão ser combinadas com as funções recursivas já existentes na Linguagem Funcional 1.
+
+O exemplo abaixo representa uma função para somar as idades das pessoas presentes em uma lista:
+
 ```text
-let record Pessoa { nome: String, idade: Int } in
-let fun somarIdades pessoas =
+fun somarIdades(pessoas) =
     if isEmpty(pessoas)
     then 0
     else head(pessoas).idade + somarIdades(tail(pessoas))
-in
-let var pessoas = [
+```
+
+O isEmpty define o caso-base da recursão. O head acessa o primeiro registro e o tail fornece os demais registros para a próxima chamada da função.
+
+## Objetivo geral
+
+Implementar registros imutáveis e listas de registros na Linguagem Funcional 1, possibilitando a representação de dados estruturados e seu processamento por meio de funções recursivas.
+
+## Objetivos específicos
+
+- permitir a declaração de tipos de registro;
+- permitir a criação de valores de registros;
+- aceitar campos com nomes e tipos diferentes dentro de um registro;
+- permitir o acesso aos campos;
+- garantir a imutabilidade dos registros;
+- permitir listas imutáveis de registros do mesmo tipo;
+- implementar as operações head, tail e isEmpty;
+- permitir o processamento recursivo das listas;
+- validar os tipos dos campos e dos elementos das listas;
+- tratar campos inexistentes e operações inválidas.
+
+## Alterações previstas
+
+A implementação envolverá mudanças nas seguintes partes da linguagem:
+
+1. Gramática: reconhecimento da declaração e criação de registros, listas, acesso a campos e operações sobre listas.
+2. Parser e AST: representação interna dos registros, campos, listas e novas operações.
+3. Sistema de tipos: validação dos campos e garantia de que uma lista contenha somente registros do mesmo tipo.
+4. Interpretador: criação dos registros, acesso aos campos e execução de head, tail e isEmpty.
+5. Tratamento de erros: identificação de campos inexistentes, valores com tipos incorretos e operações inválidas.
+6. Testes: verificação das novas funcionalidades e de sua integração com a recursão.
+
+## Exemplos de erros
+
+### Tipo de campo incompatível
+
+```text
+Pessoa { nome: "Monique", idade: true }
+```
+
+Erro esperado: o campo idade deve receber um valor do tipo Int.
+
+### Campo inexistente
+
+```text
+pessoa.endereco
+```
+
+Erro esperado: o campo endereco não existe no registro Pessoa.
+
+### Registros de tipos diferentes na mesma lista
+
+```text
+[
     Pessoa { nome: "Monique", idade: 23 },
-    Pessoa { nome: "Bruno", idade: 25 }
-] in
-somarIdades(pessoas)
+    Produto { nome: "Notebook", preco: 4000 }
+]
 ```
 
-Resultado: `48`. O `isEmpty` define o caso-base; `head` acessa uma pessoa e `tail`
-fornece as demais. A chamada `somarIdades([])` retorna `0`.
+Erro esperado: todos os registros da lista devem possuir o mesmo tipo.
 
-## Como executar
+### Operação em lista vazia
 
-Requisitos: **JDK 25** e **Apache Maven**. Confira `java -version` e
-`mvn -version`; ambos devem usar Java 25. Não é necessário instalar JavaCC
-separadamente: o Maven gera o parser.
-
-Na pasta `funcional1-registros-listas`, compile do zero, execute os testes e gere
-o JAR:
-
-```sh
-mvn clean verify
+```text
+head([])
 ```
 
-Execute os exemplos:
+Erro esperado: não é possível obter o primeiro elemento de uma lista vazia.
 
-```sh
-java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/registros/pessoa.lf1
-java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/registros/obter-nome.lf1
-java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/registros/imutabilidade.lf1
-java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/registros/somar-idades.lf1
-java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/registros/contar.lf1
-java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/registros/lista-vazia.lf1
-```
+## Escopo
 
-Resultados, na ordem: `Monique`, `Monique`, `Monique / Bruno`, `48`, `2` e `0`.
-Os programas originais também estão em `examples/funcional1/`.
+- declaração de registros;
+- criação de registros imutáveis;
+- acesso aos campos;
+- listas imutáveis de registros do mesmo tipo;
+- operações head, tail e isEmpty;
+- funções recursivas para processar as listas;
+- verificação básica de tipos;
+- tratamento de erros e testes.
 
-A entrada padrão aceita um programa completo:
+## Tecnologias
 
-```sh
-echo 'let fun somar x y = x + y in somar(2, 3)' | java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar
-```
-
-Resultado: `5`. Sem arquivo, a leitura termina em EOF (Ctrl+D no terminal do
-macOS). Arquivos e entrada padrão usam UTF-8.
-
-## Erros e exemplos inválidos
-
-O CLI distingue erros de sintaxe, de tipo e de execução. Erros da extensão e de
-chamadas de funções incluem linha e coluna quando a expressão foi lida pelo
-parser. Falhas de argumentos identificam a função e a posição do argumento;
-campos incompatíveis indicam o nome do campo e os tipos esperado e recebido.
-
-| Arquivo em `examples/erros/` | Comportamento esperado |
-| --- | --- |
-| `tipo-campo.lf1` | Rejeita `true` em um campo `Int` |
-| `campo-inexistente.lf1` | Rejeita acesso ao campo `endereco` |
-| `lista-heterogenea.lf1` | Rejeita `Pessoa` e `Produto` na mesma lista |
-| `argumento-funcao.lf1` | Rejeita lista com `idade: Boolean` em `somarIdades` |
-| `head-vazia.lf1` | Falha na execução de `head([])` |
-| `atribuicao-campo.lf1` | Rejeita tentativa de alterar `pessoa.idade` |
-
-```sh
-java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/erros/tipo-campo.lf1
-java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/erros/head-vazia.lf1
-```
-
-Esses dois comandos devem terminar com código **1**. Execuções bem-sucedidas
-terminam com **0**; opções inválidas do CLI, com **2**. Erros vão para `stderr`;
-resultados, para `stdout`.
-
-## Organização
-
-| Caminho | Conteúdo |
-| --- | --- |
-| `src/main/java/lf1/plp/` | Base PLP e extensão integrada |
-| `src/main/java/lf1/plp/functional1/extension/` | Expressões, valores, tipos compostos e localização de erros |
-| `src/main/java/lf1/plp/functional1/util/` | Inferência e tipos de funções |
-| `src/main/javacc/Functional1.jj` | Gramática executável; edite este arquivo, não o parser gerado |
-| `src/main/java/br/ufpe/cin/lf1/Main.java` | Entrada de linha de comando |
-| `src/main/java/br/ufpe/cin/lf1/prototipo/` | Protótipo histórico independente |
-| `src/test/java/` | Testes da base, extensão, inferência e CLI |
-| `examples/` | Programas válidos, inválidos e manifesto de resultados esperados |
-| `docs/IMPLEMENTACAO.md` | Decisões, mudanças, validações e limitações por etapa |
-| `etc/EBNF.txt` | Resumo da sintaxe; o `.jj` é a fonte executável |
-
-A pasta de referência `../PLP/`, quando presente no workspace, é independente
-e não participa da compilação. A demonstração `--demo-registros` é histórica;
-consulte [sua documentação](docs/historico/README.md) para não confundi-la com
-a execução de arquivos `.lf1`.
-
-## Limites do escopo
-
-- Campos apenas primitivos; registros e listas como campos não foram adicionados.
-- Listas apenas de registros; listas primitivas e listas aninhadas são rejeitadas.
-- Sem métodos, atualização de registros, inserção em listas ou funções como valores.
-- Recursão direta, sem introduzir recursão mútua ou polimórfica.
-- `record`, `head`, `tail` e `isEmpty` são palavras reservadas da extensão.
-- Os avisos conhecidos da gramática e os limites herdados da base estão
-  registrados na documentação da implementação.
+As tecnologias e ferramentas seguirão a implementação-base da Linguagem Funcional 1 disponibilizada na disciplina.
 
 ## Autores
 
 - Monique Campos
 - Efraim Tenório
+
+## Observação
+
+Os exemplos deste documento apresentam uma sintaxe inicial para explicar a proposta. A sintaxe definitiva poderá ser ajustada de acordo com a gramática e a implementação-base da Linguagem Funcional 1.

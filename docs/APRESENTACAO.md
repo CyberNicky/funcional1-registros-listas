@@ -34,6 +34,25 @@ java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/registros/somar-ida
 Para os demais, substitua o último argumento pelo caminho da tabela. Todos
 esses programas devem terminar com código 0.
 
+## Ampliação solicitada pelo professor
+
+A partir de 06/10/2026, a lista é genérica: seu elemento pode ser inteiro,
+string, booleano, registro ou outra lista. Os campos dos registros também
+aceitam listas. Acrescente estas demonstrações após o exemplo de recursão:
+
+| Arquivo | Resultado | O que explicar |
+| --- | --- | --- |
+| `examples/listas/inteiros.lf1` | `6` | Soma recursiva de `[1, 2, 3]` |
+| `examples/listas/aninhadas.lf1` | `3` | Lista de listas |
+| `examples/registros/campos-lista.lf1` | `25` | Campos `[String]`, `[Int]` e `[Boolean]` |
+| `examples/registros/lista-no-registro.lf1` | `48` | Registro `Turma` contendo `[Pessoa]` |
+
+Fala sugerida: “Generalizamos a lista para um tipo de elemento T. Isso permite
+usar as mesmas operações com listas de inteiros, strings, booleanos, registros
+ou outras listas. Também podemos declarar campos como idades: [Int] ou
+pessoas: [Pessoa]. O checaTipo verifica o tipo dos elementos e se ele corresponde
+ao tipo declarado no campo. A imutabilidade continua preservada.”
+
 ## Demonstração dos erros
 
 | Arquivo | Fase | Evidência |
@@ -49,6 +68,9 @@ esses programas devem terminar com código 0.
 java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/erros/argumento-funcao.lf1
 java -jar target/lf1-records-lists-1.0-SNAPSHOT.jar examples/erros/atribuicao-campo.lf1
 ```
+
+Também são rejeitados `examples/erros/lista-tipos-incompativeis.lf1` (`[1, true]`)
+e `examples/erros/campo-lista.lf1` (`[Boolean]` em um campo `[Int]`).
 
 Todos os exemplos de erro devem terminar com código 1. São falhas esperadas da
 linguagem, e não falhas da apresentação. `head([])` passa pela verificação de
@@ -67,7 +89,8 @@ mostrar a extensão, utilize os arquivos `.lf1`, não `--demo-registros`.
 ## Pontos para a conclusão da apresentação
 
 - Registros agrupam dados heterogêneos e permanecem imutáveis.
-- Listas contêm registros de um único tipo nominal.
+- Listas aceitam qualquer tipo de dado suportado, preservando a compatibilidade entre elementos.
 - Funções externas e recursão processam esses dados.
 - Os testes incluem casos válidos, erros, escopo, imutabilidade e regressão da base.
-- Campos compostos, listas genéricas e novas operações não fazem parte da entrega.
+- Listas genéricas e campos compostos fazem parte da ampliação solicitada pelo professor.
+- Novas operações de listas e funções como valores continuam fora do escopo.

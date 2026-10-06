@@ -1,7 +1,7 @@
 # Implementação da extensão da Funcional 1
 
-Este documento acompanha a implementação de registros imutáveis e listas de
-registros sobre a base `lf1.plp` do PLP. O README apresenta a proposta; aqui são
+Este documento acompanha a implementação de registros imutáveis e listas
+genéricas homogêneas sobre a base `lf1.plp` do PLP. O README apresenta a proposta; aqui são
 registradas as decisões, funcionalidades entregues, testes e próximas etapas.
 
 ## Estado atual
@@ -9,15 +9,18 @@ registradas as decisões, funcionalidades entregues, testes e próximas etapas.
 As etapas 1 e 2 implementam registros imutáveis, listas homogêneas e inferência
 para processamento recursivo, sem anotações de tipo nos parâmetros. A etapa 3
 consolida a documentação e os exemplos, melhora os diagnósticos e corrige a
-ligação de tipos de registro sob sombreamento.
+ligação de tipos de registro sob sombreamento. A etapa 4 amplia as listas para
+qualquer tipo de dado suportado e permite campos compostos nos registros.
 
 O [roteiro de apresentação](APRESENTACAO.md) contém os programas e resultados
-esperados. O [README](../README.md) apresenta a sintaxe executável atual.
+esperados. O [README](../README.md) preserva a proposta original; o
+[guia de execução](GUIA_EXECUCAO.md) apresenta a sintaxe executável atual.
 
 As seções abaixo preservam o histórico. A limitação de inferência e a rejeição
 estática de `head([])` da etapa 1 foram substituídas pelas regras da etapa 2.
 Na etapa 3, construtores passaram a guardar a ligação nominal verificada, e o
-protótipo foi movido para o pacote `br.ufpe.cin.lf1.prototipo`.
+protótipo foi movido para o pacote `br.ufpe.cin.lf1.prototipo`. Na etapa 4, as
+restrições anteriores a listas de registros e campos primitivos foram removidas.
 
 ## Etapa 1 — integração das construções básicas (22/09/2026)
 
@@ -463,3 +466,109 @@ Validação final concluída com JDK 25 e Maven:
 Permanecem os três avisos conhecidos do JavaCC em `==`, `+` e `and` e o aviso de
 operações não verificadas em `StackHandler`, herdados da base; a geração do
 parser, a compilação e os testes terminam com sucesso.
+
+
+## Restauração do README da proposta (29/09/2026)
+
+O README foi restaurado a partir do texto original fornecido pela autora,
+preservando seus objetivos, escopo, exemplos ilustrativos e observação sobre
+adaptação da sintaxe. Os links de documentação foram mantidos.
+
+O conteúdo consolidado da implementação foi preservado em
+[GUIA_EXECUCAO.md](GUIA_EXECUCAO.md), com os links relativos ajustados. O teste
+que executava os exemplos completos do README agora lê esse guia. A linguagem
+e seus exemplos executáveis não foram alterados nesta reorganização.
+
+
+## Etapa 4 — listas genéricas e campos compostos (06/10/2026)
+
+A orientação do professor amplia o escopo: listas passam a ser uma construção
+independente dos registros. Um registro pode estar dentro de uma lista, e uma
+lista pode ser o valor de um campo de registro.
+
+### Regras da linguagem
+
+- Uma lista tem tipo `[T]`, em que `T` pode ser `Int`, `String`, `Boolean`, um
+  tipo de registro ou outro tipo de lista. Exemplos: `[1, 2]`, `["a", "b"]`,
+  `[true, false]` e `[[1, 2], [3]]`.
+- Cada lista continua homogênea: `[1, true]` é rejeitada. A generalização permite
+  escolher o tipo do elemento, sem misturar tipos incompatíveis na mesma lista.
+- Campos aceitam tipos primitivos, nomes de registros em escopo e tipos de lista
+  escritos recursivamente: `idades: [Int]`, `pessoas: [Pessoa]`,
+  `matriz: [[Int]]` ou `responsavel: Pessoa`.
+- Tipos de registro continuam nominais. Declarações distintas com o mesmo nome
+  não se tornam intercambiáveis quando usadas em campos ou listas.
+- `[]` começa com elemento de tipo ainda desconhecido; o contexto pode determinar
+  esse tipo. `head`, `tail` e `isEmpty` funcionam com qualquer lista.
+- `head` retorna um elemento do tipo `T`; `tail` retorna `[T]`; `isEmpty` retorna
+  `Boolean`. `head([])` e `tail([])` continuam erros de execução.
+- Registros e listas permanecem imutáveis, inclusive quando aninhados.
+- A extensão mantém as funções de primeira ordem da LF1. Funções não são valores
+  que possam ser armazenados em listas; novas operações de lista não foram
+  acrescentadas.
+
+A EBNF e a gramática JavaCC agora incluem a produção recursiva:
+
+```ebnf
+TipoCampo ::= "Int" | "String" | "Boolean" | ID | "[" TipoCampo "]"
+```
+
+### Alterações no código
+
+- `TipoLista` usa uma variável de tipo livre para elementos desconhecidos;
+  `ExpLista` unifica os tipos dos elementos sem exigir registros.
+- `ValorLista` armazena valores da interface `Valor`, mantendo cópia imutável.
+  A avaliação também confere a compatibilidade dos tipos dos elementos.
+- `Inferencia.lista` reconhece listas genéricas. `Inferencia.campo` permite
+  inferir campos que são listas ou registros, além dos tipos primitivos.
+- A unificação verifica ciclos nas restrições de campos nos dois sentidos,
+  evitando tipos infinitos e recursão indevida durante a inferência.
+- `TipoNomeado` resolve nomes de tipos de campo no ambiente da declaração;
+  `TipoRegistro` resolve seus campos antes de verificar o corpo do `let`.
+  Nomes inexistentes produzem erro de tipo com linha e coluna.
+- `Functional1.jj` aceita nomes de registro e `[TipoCampo]` nas anotações.
+  As operações existentes reaproveitam o tipo genérico, sem nova sintaxe.
+
+Essas alterações chegam a `checaTipo` pelo percurso de verificação das
+expressões. Por exemplo, `idades: [Int]` aceita `[23, 25]`, mas rejeita
+`[true, false]` antes de executar o programa. Uma função que usa
+`head(pessoa.idades)` passa a inferir que o campo `idades` precisa ser uma lista.
+
+### Exemplos para executar e apresentar
+
+| Programa | Demonstração | Resultado |
+| --- | --- | --- |
+| [inteiros.lf1](../examples/listas/inteiros.lf1) | Soma recursiva de uma lista de inteiros | `6` |
+| [textos.lf1](../examples/listas/textos.lf1) | `head` e `tail` em strings | `Bruno` |
+| [booleanos.lf1](../examples/listas/booleanos.lf1) | Lista de booleanos | `false` |
+| [aninhadas.lf1](../examples/listas/aninhadas.lf1) | Lista de listas | `3` |
+| [campos-lista.lf1](../examples/registros/campos-lista.lf1) | Campos com listas de diferentes tipos | `25` |
+| [lista-no-registro.lf1](../examples/registros/lista-no-registro.lf1) | Registro contendo uma lista de registros, processada recursivamente | `48` |
+| [lista-tipos-incompativeis.lf1](../examples/erros/lista-tipos-incompativeis.lf1) | Lista heterogênea | Erro de tipo |
+| [campo-lista.lf1](../examples/erros/campo-lista.lf1) | Campo `[Int]` recebendo booleanos | Erro de tipo |
+
+O README mantém o texto original e seus links, com uma nota datada sobre a
+ampliação. O guia de execução, a EBNF e o roteiro de apresentação descrevem o
+escopo atual. O protótipo histórico permanece separado e inalterado.
+
+### Testes
+
+`ListasGenericasTest` acrescenta 22 testes para tipos primitivos, listas
+aninhadas, campos compostos, inferência, recursão, escopo nominal, imutabilidade,
+igualdade, erros e proteção contra ciclos de inferência. Os testes anteriores
+foram ajustados somente onde a restrição antiga deixou de valer. O manifesto
+passa a conter 24 exemplos, e os programas completos do guia também são
+executados pelos testes de consolidação.
+
+Validação final desta etapa, com JDK 25 e Maven:
+
+- `mvn clean verify`: **83 testes, sem falhas, erros ou testes ignorados**.
+- **24 exemplos executados pelo JAR**, com resultado e código de saída
+  conferidos contra o manifesto, incluindo os erros esperados.
+- Programa `Aluno` com campo `notas: [Int]` executado por entrada padrão;
+  `head(aluno.notas)` sobre `[8, 9, 10]` retornou `8`.
+- **33 links locais** da documentação conferidos.
+- `git diff --check` sem problemas. Nenhum commit foi criado.
+
+Permanecem os três avisos conhecidos do JavaCC e o aviso de operações não
+verificadas da base; a compilação e os testes concluíram com sucesso.

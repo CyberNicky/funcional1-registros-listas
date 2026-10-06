@@ -442,15 +442,17 @@ Expressao PDeclaracaoRegistro() :
 }
 
 Tipo PTipoCampo() :
-{ Token tipo; }
+{ Token tipo; Tipo elemento; }
 {
   tipo = < IDENTIFIER >
   {
     if (tipo.image.equals("Int")) return TipoPrimitivo.INTEIRO;
     if (tipo.image.equals("String")) return TipoPrimitivo.STRING;
     if (tipo.image.equals("Boolean")) return TipoPrimitivo.BOOLEANO;
-    throw new ParseException("Linha " + tipo.beginLine + ", coluna " + tipo.beginColumn + ": tipo de campo não suportado: " + tipo.image + ". Use Int, String ou Boolean.");
+    return new TipoNomeado(tipo.image, tipo.beginLine, tipo.beginColumn);
   }
+| < LBRACKET > elemento = PTipoCampo() < RBRACKET >
+  { return new TipoLista(elemento); }
 }
 
 List PListaId() :

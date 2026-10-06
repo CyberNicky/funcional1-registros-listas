@@ -70,7 +70,7 @@ public class InferenciaTest {
         rejeita("let fun f p = p.idade + (if p.idade then 1 else 0) in 0");
         rejeita("let fun f p = p + p.idade in 0");
         rejeita("let fun f p = if isEmpty(p) then p.idade else 0 in 0");
-        rejeita("let fun f p = p.nome.idade in 0");
+        rejeita(TIPOS + "let fun f p = p.nome.idade in f(" + P + ")");
     }
 
     @Test public void retornoDeHeadETailPreservaTipoNominal() throws Exception {
@@ -82,7 +82,7 @@ public class InferenciaTest {
     @Test public void funcoesPodemConstruirListasHomogeneasDeParametros() throws Exception {
         inteiro(23, TIPOS + "let fun par a b = [a, b] in head(par(" + P + ", " + P + ")).idade");
         rejeita(TIPOS + "let fun par a b = [a, b] in par(" + P + ", " + Q + ")");
-        rejeita("let fun lista a = [a] in lista(1)");
+        inteiro(1, "let fun lista a = [a] in head(lista(1))");
     }
 
     @Test public void parametrosRelacionadosExigemOMesmoTipoNominal() throws Exception {
@@ -131,7 +131,7 @@ public class InferenciaTest {
     @Test public void listaVaziaInfereTipoNoContextoDaFuncao() throws Exception {
         inteiro(0, "let fun f xs = if isEmpty(xs) then 0 else head(xs).idade in f([])");
         inteiro(23, TIPOS + "let fun escolher xs ys = if isEmpty(xs) then ys else xs in head(escolher([], [" + P + "])).idade");
-        rejeita("let fun f xs = if isEmpty(xs) then 0 else head(xs) + 1 in f([])");
+        inteiro(0, "let fun f xs = if isEmpty(xs) then 0 else head(xs) + 1 in f([])");
     }
 
     @Test public void headETailVaziosFalhamSomenteQuandoExecutados() throws Exception {

@@ -23,5 +23,5 @@ Os desenhos originais, anteriormente em `etc/`, foram preservados aqui:
 - [Fluxo proposto originalmente](fluxo-prototipo.txt)
 
 Esses desenhos são históricos: caminhos, nomes e fluxo não descrevem a versão
-integrada. A arquitetura atual está no [README](../../README.md) e na
+integrada. A arquitetura atual está no [guia de execução](../GUIA_EXECUCAO.md) e na
 [documentação da implementação](../IMPLEMENTACAO.md).

@@ -2,7 +2,6 @@ package lf1.plp.functional1.util;
 
 import java.util.*;
 import lf1.plp.expressions1.util.Tipo;
-import lf1.plp.expressions1.util.TipoPrimitivo;
 import lf1.plp.functional1.extension.*;
 
 /** Unificação com restrições de campos e instanciação por chamada, sem estado global. */
@@ -17,16 +16,9 @@ public final class Inferencia {
         return tipo;
     }
 
-    public static TipoPolimorfico novoRegistro() {
-        TipoPolimorfico var = new TipoPolimorfico();
-        var.restricao = TipoPolimorfico.Restricao.REGISTRO;
-        return var;
-    }
-
     public static boolean exigirRegistro(Tipo tipo) {
         tipo = resolver(tipo);
         if (tipo instanceof TipoPolimorfico var) {
-            if (var.restricao == TipoPolimorfico.Restricao.PRIMITIVO) return false;
             var.restricao = TipoPolimorfico.Restricao.REGISTRO;
             return true;
         }
@@ -42,19 +34,15 @@ public final class Inferencia {
             return campo;
         }
         TipoPolimorfico var = (TipoPolimorfico) tipo;
-        return var.campos.computeIfAbsent(nome, ignorado -> {
-            TipoPolimorfico campo = new TipoPolimorfico();
-            campo.restricao = TipoPolimorfico.Restricao.PRIMITIVO;
-            return campo;
-        });
+        return var.campos.computeIfAbsent(nome, ignorado -> new TipoPolimorfico());
     }
 
     public static TipoLista lista(Tipo tipo) {
         tipo = resolver(tipo);
         if (tipo instanceof TipoLista lista) return lista;
-        TipoLista lista = new TipoLista(novoRegistro());
+        TipoLista lista = new TipoLista(new TipoPolimorfico());
         if (tipo instanceof TipoPolimorfico && unificar(tipo, lista)) return lista;
-        throw new ErroExtensao("Operação de lista exige uma lista de registros.");
+        throw new ErroExtensao("Operação de lista exige uma lista.");
     }
 
     public static boolean unificar(Tipo a, Tipo b) {
@@ -78,7 +66,11 @@ public final class Inferencia {
 
     private static boolean vincular(TipoPolimorfico var, Tipo tipo) {
         if (ocorre(var, tipo, Collections.newSetFromMap(new IdentityHashMap<>()))) return false;
+        // A Funcional 1 não possui funções como valores de primeira classe.
+        if (tipo instanceof TipoFuncao) return false;
         if (tipo instanceof TipoPolimorfico outra) {
+            // Ao unir restrições de campos, verifica ciclos também no sentido inverso.
+            if (ocorre(outra, var, Collections.newSetFromMap(new IdentityHashMap<>()))) return false;
             if (var.restricao != TipoPolimorfico.Restricao.LIVRE
                     && outra.restricao != TipoPolimorfico.Restricao.LIVRE
                     && var.restricao != outra.restricao) return false;
@@ -89,7 +81,6 @@ public final class Inferencia {
             if (outra.restricao == TipoPolimorfico.Restricao.LIVRE) outra.restricao = var.restricao;
             var.campos.forEach(outra.campos::putIfAbsent);
         } else {
-            if (var.restricao == TipoPolimorfico.Restricao.PRIMITIVO && !(tipo instanceof TipoPrimitivo)) return false;
             if (var.restricao == TipoPolimorfico.Restricao.REGISTRO) {
                 if (!(tipo instanceof TipoRegistro registro)) return false;
                 for (var campo : var.campos.entrySet()) {
