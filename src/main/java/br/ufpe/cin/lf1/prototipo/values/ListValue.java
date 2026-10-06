@@ -12,7 +12,7 @@ public record ListValue(Type elementType, List<RecordValue> elements) implements
         if (elements.isEmpty()) {
             throw new RuntimeException("Erro de Execução: Não é possível obter head de uma lista vazia.");
         }
-        return elements.get(0);
+        return elements.getFirst();
     }
 
     public ListValue tail() {
