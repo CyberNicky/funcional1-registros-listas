@@ -280,14 +280,6 @@ mvn -Dtest="ListasGenericasTest#registroComListaDeRegistros" test
 | `etc/EBNF.txt` | Resumo da sintaxe |
 | `docs/` | Execução, implementação e histórico |
 
-## Limites do escopo
-
-- Listas genéricas e homogêneas, sem tipos união para misturar elementos incompatíveis.
-- Registros e listas imutáveis, sem métodos ou operações de atualização e inserção.
-- Funções de primeira ordem, sem funções como valores ou closures.
-- Recursão direta, sem introduzir recursão mútua ou polimórfica.
-- `record`, `head`, `tail` e `isEmpty` são palavras reservadas da extensão.
-
 ## Autores
 
 - Monique Campos
